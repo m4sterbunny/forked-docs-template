@@ -168,7 +168,7 @@
 @layer utilities {
   /* A single local "token" to ensure circle and line are identical */
   .fd-steps {
-    --qvac-step-accent: color-mix(
+    --docs-step-accent: color-mix(
       in oklab,
       var(--color-fd-primary) 18%,
       var(--color-fd-background)
@@ -178,12 +178,12 @@
   /* circle */
   .fd-steps > .fd-step::before {
     border: 0 !important;
-    background-color: var(--qvac-step-accent) !important;
+    background-color: var(--docs-step-accent) !important;
     box-shadow: 0 0 0 2px var(--color-fd-background) !important;
   }
 
   .fd-steps {
-    border-left-color: var(--qvac-step-accent) !important;
+    border-left-color: var(--docs-step-accent) !important;
   }
 }
 
