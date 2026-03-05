@@ -1,0 +1,24 @@
+---
+title: References
+slug: references/references
+---
+
+# References
+
+Reference documentation provides detailed, authoritative information about the DOCS project's APIs, components, and configuration options. According to the [Diátaxis documentation framework](https://diataxis.fr/), references are designed to be comprehensive and factual, serving as the single source of truth for users and developers.
+
+## How References Should Be Generated
+
+Reference docs should be generated automatically from the source code whenever possible. This ensures accuracy and consistency as the project evolves. Tools like [TypeDoc](https://typedoc.org/) can be used to generate API documentation for TypeScript projects.
+
+### Example: Generating Reference Docs with TypeDoc
+
+To generate reference documentation using TypeDoc, run the following command in your project root:
+
+```sh
+npx typedoc --out docs/api src/index.ts
+```
+
+This will create a set of HTML files in the `docs/api` directory, documenting all exported symbols from your codebase.
+
+For more on the Diátaxis approach to reference documentation, visit [diataxis.fr](https://diataxis.fr/reference/).
