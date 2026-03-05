@@ -51,7 +51,7 @@ npm run serve
 
 TBD with DevOps team.
 
-Planned address for release: [http://docs.docs.tether.dev](http://docs.docs.tether.io)
+Planned address for release: [http://docs.docs.tether.io](http://docs.docs.tether.io)
 
 ## Repository layout
 

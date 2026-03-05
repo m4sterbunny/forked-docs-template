@@ -91,7 +91,15 @@ async function checkBrokenLinksWithFumadocs() {
     }
     
     const validUrls = new Set(fumadocsData.validUrls);
-    const validAnchors = new Map(Object.entries(fumadocsData.validAnchors));
+    const rawValidAnchors = fumadocsData.validAnchors || {};
+    const validAnchors = new Map(
+      Object.entries(rawValidAnchors).map(([url, anchors]) => {
+        const normalizedAnchors = Array.isArray(anchors)
+          ? anchors.map(String)
+          : [];
+        return [url, normalizedAnchors];
+      })
+    );
     
     console.log(`📊 Total of ${validUrls.size} valid URLs discovered`);
     console.log(`📊 Total of ${validAnchors.size} pages with anchors discovered\n`);
