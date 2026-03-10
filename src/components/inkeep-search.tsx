@@ -42,7 +42,7 @@ export default function CustomDialog(props: SharedProps) {
     },
     aiChatSettings: {
       // optional settings
-      aiAssistantAvatar: "/docs-favicon.ico", // use your own AI assistant avatar
+      aiAssistantAvatar: "/favicon.ico", // use your own AI assistant avatar
       exampleQuestions: [
         "What is DOCS?",
         "Why Tether built DOCS?",

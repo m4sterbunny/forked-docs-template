@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
   description: 'Official documentation and single source of truth for DOCS.',
   icons: {
-    icon: '/docs-favicon.svg',
+    icon: '/favicon.svg',
   },
 };
 
