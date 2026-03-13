@@ -1,0 +1,9 @@
+{
+  "entryPoints": ["../../docs/packages/docs-sdk/index.ts"],
+  "tsconfig": "../../docs/packages/docs-sdk/tsconfig.json",
+  "json": "../api-reference.json",
+  "pretty": true,
+  "includeVersion": true,
+  "readme": "none",
+  "note": "This Typedoc config is intended to be run from a workspace/monorepo layout where a ../../docs/packages/docs-sdk/ directory exists."
+}
