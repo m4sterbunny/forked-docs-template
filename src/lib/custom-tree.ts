@@ -15,11 +15,6 @@ export const customTree: Node[] = [
     name: 'About',
     type: 'folder',
     icon: resolveIcon('Rocket'),
-    index: {
-      name: 'About',
-      url: '/about/about',
-      type: 'page',
-    },
     children: [
       {
         name: 'About',
@@ -36,11 +31,6 @@ export const customTree: Node[] = [
     name: 'Getting Started',
     type: 'folder',
     icon: resolveIcon('Rocket'),
-    index: {
-      name: 'Quickstart',
-      url: '/getting-started/quickstart',
-      type: 'page',
-    },
     children: [
       {
         name: 'Quickstart',
@@ -53,7 +43,6 @@ export const customTree: Node[] = [
     name: 'How-tos',
     type: 'folder',
     icon: resolveIcon('Cog'),
-    index: { name: 'How-to', url: '/how-tos/how-to', type: 'page', icon: resolveIcon('Router') },
     children: [
       { name: 'How-to', url: '/how-tos/how-to', type: 'page', icon: resolveIcon('Router') },
     ],
@@ -62,7 +51,6 @@ export const customTree: Node[] = [
     name: 'Tutorials',
     type: 'folder',
     icon: resolveIcon('BookType'),
-    index: { name: 'Tutorials', url: '/tutorials/tutorials', type: 'page', icon: resolveIcon('Rocket') },
     children: [
       {
         name: 'Tutorials',
@@ -80,7 +68,6 @@ export const customTree: Node[] = [
     name: 'References',
     type: 'folder',
     icon: resolveIcon('BookA'),
-    index: {type: 'page', name: 'References', url: '/references/references'},
     children: [
       { name: 'References', url: '/references/references', type: 'page' },
     ],
@@ -94,7 +81,6 @@ export const customTree: Node[] = [
     name: 'FAQs',
     type: 'folder',
     icon: resolveIcon('MessageCircleQuestionMark'),
-    index: {type: 'page', name: 'FAQs', url: '/faqs/faqs'},
     children: [
       { name: 'FAQs', url: '/faqs/faqs', type: 'page' },
     ],
