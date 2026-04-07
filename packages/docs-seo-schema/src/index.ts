@@ -1,6 +1,5 @@
 /**
  * SEO-related frontmatter fields for Fumadocs MDX collections.
- * @see proposals/improve-seo-technical-spec-v2/meta-standards-and-frontmatter.md
  */
 import { z } from 'zod';
 

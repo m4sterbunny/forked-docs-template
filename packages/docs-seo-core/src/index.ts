@@ -34,8 +34,7 @@ export type DocsSeoConfig = {
   siteName: string;
   /**
    * Label on generated OG images (Takumi `site` prop). Defaults to `siteName` when omitted.
-   * @see proposals/improve-seo-technical-spec-v2/open-graph-and-twitter.md
-   */
+     */
   imageSiteLabel?: string;
   /** Publisher name for JSON-LD (e.g. `Tether`) */
   publisherName: string;
@@ -104,7 +103,6 @@ function parseLastModified(
 
 /**
  * Infer JSON-LD @type from Diataxis-style first slug segment when honest defaults suffice.
- * @see proposals/improve-seo-technical-spec-v2/json-ld.md
  */
 export function inferJsonLdType(
   slugs: string[],
