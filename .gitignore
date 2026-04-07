@@ -2,6 +2,8 @@
 /node_modules
 
 # generated content
+# Takumi prebuild (`npm run build:og` / `prebuild`) — keep `public/og-default.png` committed
+/public/og/docs/
 .contentlayer
 .content-collections
 .source
@@ -32,4 +34,3 @@ yarn-error.log*
 # others
 .env*.local
 .vercel
-next-env.d.ts

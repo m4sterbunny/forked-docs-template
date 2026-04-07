@@ -5,6 +5,7 @@ import {
   metaSchema,
 } from 'fumadocs-mdx/config';
 import { remarkMdxMermaid } from 'fumadocs-core/mdx-plugins';
+import { tetherSeoFrontmatterSchema } from '@tether/docs-seo-schema';
 import { z } from "zod";
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
@@ -13,9 +14,11 @@ import remarkMath from 'remark-math';
 // see https://fumadocs.dev/docs/mdx/collections#define-docs
 export const docs = defineDocs({
   docs: {
-    schema: frontmatterSchema.extend({
-      titleStyle: z.enum(["code", "text"]).optional(),
-    }),
+    schema: frontmatterSchema
+      .extend({
+        titleStyle: z.enum(["code", "text"]).optional(),
+      })
+      .extend(tetherSeoFrontmatterSchema.shape),
     postprocess: {
       includeProcessedMarkdown: true,
     },
