@@ -11,7 +11,7 @@ The site is a **static export** from a Next.js + [Fumadocs](https://fumadocs.dev
 
 Prerequisites:
 
-- Node.js >= 22.17.0
+- Node.js >= 22.22.0
 - `npm` >= 10.9.2
 
 Install dependencies:
