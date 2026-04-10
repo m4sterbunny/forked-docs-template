@@ -14,11 +14,14 @@ import remarkMath from 'remark-math';
 // see https://fumadocs.dev/docs/mdx/collections#define-docs
 export const docs = defineDocs({
   docs: {
+    // Passthrough keeps arbitrary frontmatter (e.g. stub `external`) for page handlers;
+    // known fields are still validated (SEO via tetherSeoFrontmatterSchema, Fumadocs base via frontmatterSchema).
     schema: frontmatterSchema
       .extend({
         titleStyle: z.enum(["code", "text"]).optional(),
       })
-      .extend(tetherSeoFrontmatterSchema.shape),
+      .extend(tetherSeoFrontmatterSchema.shape)
+      .passthrough(),
     postprocess: {
       includeProcessedMarkdown: true,
     },
