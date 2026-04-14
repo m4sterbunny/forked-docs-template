@@ -140,6 +140,10 @@ const optionVariants = cva(
   'text-sm p-2 rounded-lg inline-flex items-center gap-2 hover:text-fd-accent-foreground hover:bg-fd-accent [&_svg]:size-4',
 );
 
+const inkeepEnabled =
+  typeof process.env.NEXT_PUBLIC_INKEEP_API_KEY === 'string' &&
+  process.env.NEXT_PUBLIC_INKEEP_API_KEY.length > 0;
+
 export function ViewOptions({
   markdownUrl,
 }: {
@@ -195,7 +199,11 @@ export function ViewOptions({
   return (
     <Popover>
       <PopoverTrigger
-        aria-label="Ask our AI assistant"
+        aria-label={
+          inkeepEnabled
+            ? 'Ask our AI assistant and page options'
+            : 'Open in external assistants'
+        }
         className={cn(
           buttonVariants({
             color: 'secondary',
@@ -209,12 +217,14 @@ export function ViewOptions({
         <ChevronDown className="size-3.5 text-fd-muted-foreground" />
       </PopoverTrigger>
       <PopoverContent className="flex flex-col">
-        <PopoverClose asChild>
-          <button type="button" data-inkeep-modal-trigger="chat" className={cn(optionVariants())}>
-            <MessageSquare className="text-fd-muted-foreground" />
-            Ask our AI assistant
-          </button>
-        </PopoverClose>
+        {inkeepEnabled ? (
+          <PopoverClose asChild>
+            <button type="button" data-inkeep-modal-trigger="chat" className={cn(optionVariants())}>
+              <MessageSquare className="text-fd-muted-foreground" />
+              Ask our AI assistant
+            </button>
+          </PopoverClose>
+        ) : null}
 
         {items.map((item) => (
           <a

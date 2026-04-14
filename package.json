@@ -1,18 +1,26 @@
 {
-  "name": "docs-docs",
+  "name": "@tether/docs-site",
   "version": "0.1.0",
   "description": "Official documentation and single source of truth for DOCS",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
+    "prebuild": "tsx scripts/generate-takumi-og.mts",
     "build": "next build && npx @vahor/next-broken-links",
     "build:static": "next build && npx @vahor/next-broken-links",
+    "build:og": "tsx scripts/generate-takumi-og.mts",
     "dev": "next dev --turbo -p 3001",
     "start": "next start",
-    "serve": "serve dist -p 8080",
+    "serve": "serve out -p 8080",
     "postinstall": "fumadocs-mdx",
     "check-links": "node scripts/check-links.js"
   },
   "dependencies": {
+    "@tether/docs-seo-next": "0.0.0",
+    "@tether/docs-seo-og": "0.0.0",
+    "@tether/docs-seo-schema": "0.0.0",
     "@ai-sdk/openai-compatible": "^1.0.29",
     "@ai-sdk/react": "^2.0.118",
     "@icons-pack/react-simple-icons": "^13.8.0",
@@ -60,6 +68,7 @@
     "typedoc": "^0.28.17",
     "typedoc-plugin-frontmatter": "^1.3.1",
     "typedoc-plugin-markdown": "^4.10.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.2",
     "unified": "^11.0.2",
     "unist-util-visit": "^5.0.0"

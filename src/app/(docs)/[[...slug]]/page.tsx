@@ -12,6 +12,14 @@ import { getMDXComponents } from '@/mdx-components';
 import { resolveIcon } from "@/lib/resolveIcon";
 import { cloneElement, isValidElement } from "react";
 import { LLMCopyButton, ViewOptions } from '@/components/page-actions';
+import {
+  buildDocsMetadata,
+  buildJsonLdGraph,
+  DocsJsonLd,
+  getPageSeoState,
+} from '@tether/docs-seo-next';
+import { getPageImage } from '@tether/docs-seo-og';
+import { getDocsSeoConfig } from '@/lib/seo-config';
 
 function TitleText({
   title,
@@ -53,8 +61,13 @@ export default async function Page(props: PageProps<'/[[...slug]]'>) {
   // Filter ToC to include H2 through H5 (depth 2, 3, 4, and 5)
   const filteredToc = page.data.toc?.filter(item => item.depth >= 2 && item.depth <= 5) || [];
   
+  const seoConfig = getDocsSeoConfig();
+  const seoState = getPageSeoState(page, seoConfig);
+  const jsonLd = buildJsonLdGraph(page, seoState, seoConfig);
+
   return (
     <DocsPage toc={filteredToc} tableOfContent={{ style: "clerk" }} tableOfContentPopover={{ style: "clerk" }} full={page.data.full}>
+      {jsonLd ? <DocsJsonLd data={jsonLd} /> : null}
       <DocsTitle>
         <span className="inline-flex items-center gap-2 leading-none">
           {titleIcon ? (
@@ -99,9 +112,18 @@ export async function generateMetadata(
   const page = source.getPage(params.slug);
   if (!page) notFound();
   const isHomePage = !params.slug || params.slug.length === 0;
+  const seoConfig = getDocsSeoConfig();
+  const state = getPageSeoState(page, seoConfig);
+  const ogImageUrl =
+    state.ogImageOverride ??
+    (process.env.SKIP_OG_BUILD === '1'
+      ? (seoConfig.staticOgImagePath ?? '/og-default.png')
+      : getPageImage(page).url);
 
-  return {
-    title: isHomePage ? { absolute: page.data.title } : page.data.title,
-    description: page.data.description,
-  };
+  return buildDocsMetadata({
+    state,
+    ogImageUrl,
+    siteName: seoConfig.siteName,
+    isHomePage,
+  });
 }
