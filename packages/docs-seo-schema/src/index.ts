@@ -40,7 +40,7 @@ export const SEO_SCHEMA_VERSION = 1;
 
 // --- Frontmatter gap warnings (console; deduped per page in-process). Set DOCS_SEO_SILENT=1 to disable.
 
-export const DOCS_SEO_WARN_PREFIX = '[@tether/docs-seo]';
+export const DOCS_SEO_WARN_PREFIX = '[@tetherto/docs-seo]';
 
 const warnedSlugKeys = new Set<string>();
 

@@ -1,4 +1,4 @@
-import type { TetherPage } from '@tether/docs-seo-core';
+import type { TetherPage } from '@tetherto/docs-seo-core';
 import { ImageResponse } from '@takumi-rs/image-response';
 import { generate as OgTemplate } from 'fumadocs-ui/og';
 

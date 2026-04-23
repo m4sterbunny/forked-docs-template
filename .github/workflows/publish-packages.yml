@@ -1,0 +1,50 @@
+name: Publish Packages to GitHub Packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com
+          scope: "@tetherto"
+
+      - name: Publish packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          PACKAGES=(
+            "packages/docs-seo-schema"
+            "packages/docs-seo-core"
+            "packages/docs-seo-next"
+            "packages/docs-seo-og"
+          )
+
+          for pkg_dir in "${PACKAGES[@]}"; do
+            PKG_NAME=$(node -p "require('./$pkg_dir/package.json').name")
+            PKG_VERSION=$(node -p "require('./$pkg_dir/package.json').version")
+
+            if npm view "$PKG_NAME@$PKG_VERSION" version --registry https://npm.pkg.github.com 2>/dev/null; then
+              echo "Skipping $PKG_NAME@$PKG_VERSION — already published"
+            else
+              echo "Publishing $PKG_NAME@$PKG_VERSION"
+              npm publish --workspace "$pkg_dir"
+              echo "Published $PKG_NAME@$PKG_VERSION"
+            fi
+          done

@@ -1,7 +1,7 @@
 import {
   type PageSeoState,
   warnMissingSeoFrontmatterFields,
-} from '@tether/docs-seo-core';
+} from '@tetherto/docs-seo-core';
 import type { Metadata } from 'next';
 
 export type DocsMetadataOptions = {

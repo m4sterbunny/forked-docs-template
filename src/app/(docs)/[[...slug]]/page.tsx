@@ -17,8 +17,8 @@ import {
   buildJsonLdGraph,
   DocsJsonLd,
   getPageSeoState,
-} from '@tether/docs-seo-next';
-import { getPageImage } from '@tether/docs-seo-og';
+} from '@tetherto/docs-seo-next';
+import { getPageImage } from '@tetherto/docs-seo-og';
 import { getDocsSeoConfig } from '@/lib/seo-config';
 
 function TitleText({
