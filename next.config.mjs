@@ -6,10 +6,10 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   transpilePackages: [
-    '@tether/docs-seo-schema',
-    '@tether/docs-seo-core',
-    '@tether/docs-seo-next',
-    '@tether/docs-seo-og',
+    '@tetherto/docs-seo-schema',
+    '@tetherto/docs-seo-core',
+    '@tetherto/docs-seo-next',
+    '@tetherto/docs-seo-og',
   ],
   output: 'export',
   trailingSlash: true,

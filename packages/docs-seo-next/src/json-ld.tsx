@@ -1,4 +1,4 @@
-import type { JsonLdGraph } from '@tether/docs-seo-core';
+import type { JsonLdGraph } from '@tetherto/docs-seo-core';
 
 export type DocsJsonLdProps = {
   data: JsonLdGraph;

@@ -2,7 +2,7 @@ import {
   type DocsSeoConfig,
   getPageSeoState,
   type TetherPage,
-} from '@tether/docs-seo-core';
+} from '@tetherto/docs-seo-core';
 import type { MetadataRoute } from 'next';
 
 export type DocsSitemapSource = {

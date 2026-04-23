@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { buildDocsRobots } from '@tether/docs-seo-next';
+import { buildDocsRobots } from '@tetherto/docs-seo-next';
 import { getDocsSeoConfig } from '@/lib/seo-config';
 
 export const dynamic = 'force-static';

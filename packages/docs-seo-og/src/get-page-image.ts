@@ -1,4 +1,4 @@
-import type { TetherPage } from '@tether/docs-seo-core';
+import type { TetherPage } from '@tetherto/docs-seo-core';
 
 export type PageImageResult = {
   segments: string[];
@@ -8,7 +8,7 @@ export type PageImageResult = {
 
 /**
  * OG image segments and root-relative URL (Fumadocs convention: terminal `image.webp`).
- * With `output: 'export'`, run `precomputeTakumiOgImages` from `@tether/docs-seo-og/build` before
+ * With `output: 'export'`, run `precomputeTakumiOgImages` from `@tetherto/docs-seo-og/build` before
  * `next build` so these paths exist under `public/`. For dynamic SSR, use a Route Handler instead.
  * @see https://fumadocs.dev/docs/integrations/og/takumi
  */

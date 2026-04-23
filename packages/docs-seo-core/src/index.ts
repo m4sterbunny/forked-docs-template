@@ -3,20 +3,20 @@ import type {
   DocType,
   JsonLdSchemaType,
   TetherSeoFrontmatter,
-} from '@tether/docs-seo-schema';
+} from '@tetherto/docs-seo-schema';
 import {
   DOCS_SEO_WARN_PREFIX,
   SEO_SCHEMA_VERSION,
   tetherSeoFrontmatterSchema,
   warnMissingSeoFrontmatterFields,
-} from '@tether/docs-seo-schema';
+} from '@tetherto/docs-seo-schema';
 
 export type {
   DocType,
   JsonLdSchemaType,
   TetherSeoFrontmatter,
   WarnMissingSeoFrontmatterOptions,
-} from '@tether/docs-seo-schema';
+} from '@tetherto/docs-seo-schema';
 export {
   DOCS_SEO_WARN_PREFIX,
   SEO_SCHEMA_VERSION,

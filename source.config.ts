@@ -5,7 +5,7 @@ import {
   metaSchema,
 } from 'fumadocs-mdx/config';
 import { remarkMdxMermaid } from 'fumadocs-core/mdx-plugins';
-import { tetherSeoFrontmatterSchema } from '@tether/docs-seo-schema';
+import { tetherSeoFrontmatterSchema } from '@tetherto/docs-seo-schema';
 import { z } from "zod";
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';

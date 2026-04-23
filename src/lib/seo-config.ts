@@ -1,4 +1,4 @@
-import type { DocsSeoConfig } from '@tether/docs-seo-next';
+import type { DocsSeoConfig } from '@tetherto/docs-seo-next';
 
 /**
  * Production SEO base URL. Set in CI/deploy (e.g. `https://docs.tether.io`).

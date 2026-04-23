@@ -12,7 +12,7 @@ export {
   type TetherPageData,
   type WarnMissingSeoFrontmatterOptions,
   SEO_SCHEMA_VERSION,
-} from '@tether/docs-seo-core';
+} from '@tetherto/docs-seo-core';
 
 export { buildDocsMetadata, type DocsMetadataOptions } from './metadata';
 export { buildDocsSitemap, type DocsSitemapSource } from './sitemap';
