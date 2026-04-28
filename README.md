@@ -51,35 +51,62 @@ The main app must **not** import `@tether/docs-seo-og/handler` in pages that shi
 
 ### Using these packages from another repository
 
-**Current approach (Git):** install the packages from this repo’s `packages/` subpaths. Packages depend on each other with version **`0.0.0`** (workspace-style), which **does not exist on the public registry**, so the consuming app should use **`overrides`** (npm) so every `@tether/docs-*` install resolves to the same Git source.
+`@tetherto/docs-seo-*` is published to **GitHub Packages**, not the public npm registry. Consumers install it like any normal npm dependency (`@tetherto/docs-seo-next: ^1.1.0`) once `npm` is pointed at the right registry and authenticated with a personal access token.
 
-1. In the consumer’s `package.json`, declare what you need and override all four scopes to matching URLs (same org, repo, and ref for every line):
+#### 1. Configure `.npmrc`
 
-```json
-{
-  "dependencies": {
-    "@tether/docs-seo-next": "github:tetherto/docs-template#path:packages/docs-seo-next",
-    "@tether/docs-seo-og": "github:tetherto/docs-template#path:packages/docs-seo-og",
-    "@tether/docs-seo-schema": "github:tetherto/docs-template#path:packages/docs-seo-schema"
-  },
-  "overrides": {
-    "@tether/docs-seo-schema": "github:tetherto/docs-template#path:packages/docs-seo-schema",
-    "@tether/docs-seo-core": "github:tetherto/docs-template#path:packages/docs-seo-core",
-    "@tether/docs-seo-next": "github:tetherto/docs-template#path:packages/docs-seo-next",
-    "@tether/docs-seo-og": "github:tetherto/docs-template#path:packages/docs-seo-og"
-  }
-}
+Add an `.npmrc` to the consumer repo so the `@tetherto` scope is fetched from GitHub Packages and the token is read from a `GITHUB_TOKEN` environment variable:
+
+```ini
+@tetherto:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
-To pin a **branch or tag**, use npm’s `commit-ish` form before `path`, for example: `github:tetherto/docs-template#main:path:packages/docs-seo-core` (see [npm: git URLs as dependencies](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#github-urls)). For reproducible builds, prefer a **release tag** or **commit SHA** once you tag this repo.
+Commit this file. It contains no secret — only the variable reference.
 
-2. In **Next.js**, set `transpilePackages` to include every `@tether/docs-*` package you import (sources are TypeScript).
+#### 2. Generate a personal access token
 
-3. Install **peer dependencies** (`fumadocs-core`, `next`, `react`, `zod` for schema, etc.) to versions compatible with each package’s `peerDependencies`.
+Create a **classic** PAT at https://github.com/settings/tokens/new with these scopes:
 
-4. For **private GitHub** repos, use SSH or a token URL npm supports (e.g. `git+ssh://git@github.com/tetherto/docs-template.git#path:packages/docs-seo-next`) and ensure CI has credentials.
+- **`read:packages`** — required, to download `@tetherto/*` from GitHub Packages.
+- **`repo`** — required if any of the source repositories that publish those packages are private (otherwise GitHub returns `403` even with the right scope).
 
-**Future approach (private registry):** publish `@tether/docs-seo-*` to your org’s npm/GitHub Packages scope, remove **`"private": true`**, replace internal **`0.0.0`** dependencies with real **semver** ranges, and drop **`overrides`** in consumers in favor of normal `npm install @tether/docs-seo-next@^x`.
+Important: **set an expiration on the token.** Tokens that never expire are rejected by the registry. Pick the shortest expiration that fits your workflow; you'll be regenerating it.
+
+After creating the token, if the `tetherto` organization uses SSO, click **"Configure SSO"** next to the token in the tokens list and authorize it for the org. Without that step the registry returns `403` even with the right scopes.
+
+A fine-grained personal access token also works, scoped to the `tetherto` resource owner with **Packages: Read** repository permission. Same expiration requirement applies.
+
+#### 3. Save the token locally
+
+Add `GITHUB_TOKEN=ghp_yourTokenHere` to a gitignored `.env` (or `.env.local`) file. Keep it readable only by you (`chmod 600 .env`). Never commit the token.
+
+#### 4. Verify before installing
+
+Quick sanity check:
+
+```bash
+set -a && . ./.env && set +a
+npm whoami --registry=https://npm.pkg.github.com   # should print your GitHub username
+npm view @tetherto/docs-seo-schema version --registry=https://npm.pkg.github.com
+```
+
+If `npm whoami` prints your username but the second command 403s, the token authenticates but lacks `read:packages` (and/or SSO authorization).
+
+#### 5. Install
+
+```bash
+set -a && . ./.env && set +a
+npm install
+```
+
+CI sets `GITHUB_TOKEN` directly from secrets (e.g. the built-in `${{ secrets.GITHUB_TOKEN }}` for org-internal workflows, or a PAT secret for cross-org reads) — no `.env` file involved.
+
+#### Notes for the consumer's `package.json`
+
+- Add the packages you actually import (`@tetherto/docs-seo-next`, `@tetherto/docs-seo-og`, `@tetherto/docs-seo-schema`); transitive `@tetherto/*` deps resolve automatically.
+- Sources are TypeScript and shipped as-is, so set `transpilePackages` in **Next.js** to include every `@tetherto/docs-seo-*` package you import.
+- Install **peer dependencies** (`fumadocs-core`, `next`, `react`, `zod` for schema, etc.) to versions compatible with each package's `peerDependencies`.
 
 ## SEO and frontmatter
 
