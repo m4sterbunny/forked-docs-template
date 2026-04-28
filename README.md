@@ -93,7 +93,12 @@ Extended fields are merged in [`source.config.ts`](source.config.ts) via `tether
 
 Per-page metadata, sitemap, robots, and JSON-LD share the same logic through [`src/lib/seo-config.ts`](src/lib/seo-config.ts) and `@tether/docs-seo-next`.
 
-During `next build` / dev, `getPageSeoState` and `buildDocsMetadata` emit **`[@tether/docs-seo]`** `console.warn` lines for missing optional fields (`ogImage`, `schemaType`, `docType`, `lastModified`, and empty `description` if it bypasses MDX validation). Warnings are deduped per page per Node process. Set **`DOCS_SEO_SILENT=1`** to turn them off. The same helpers are re-exported from `@tether/docs-seo-schema`, `@tether/docs-seo-core`, `@tether/docs-seo-next`, and `@tether/docs-seo-og` (`warnMissingSeoFrontmatterFields`).
+During `next build` / dev, `getPageSeoState` and `buildDocsMetadata` emit **`[@tether/docs-seo]`** `console.warn` lines for missing optional fields (`ogImage`, `schemaType`, `docType`, `lastModified`, and empty `description` if it bypasses MDX validation). Warnings are deduped per page per Node process. Two env knobs control them:
+
+- **`DOCS_SEO_SILENT=1`** — silence ALL warnings (including the required-`description` warning). Use sparingly.
+- **`DOCS_SEO_QUIET_GENERATED=1`** — silence only the warnings for fields that have sensible auto-generated/inferred defaults (`ogImage`, `schemaType`, `lastModified`). `description` and `docType` warnings stay loud because neither has a useful default. Recommended when you opt into the Takumi OG prebuild + the `fumadocs-mdx` `lastModified` plugin.
+
+The same helpers are re-exported from `@tether/docs-seo-schema`, `@tether/docs-seo-core`, `@tether/docs-seo-next`, and `@tether/docs-seo-og` (`warnMissingSeoFrontmatterFields`).
 
 ## Environment variables
 
@@ -107,7 +112,8 @@ Full template with comments: [`env.example`](env.example).
 | `SKIP_OG_BUILD` | No | Set to `1` to use static OG fallback instead of per-page `public/og/docs/**` URLs in metadata. |
 | `DOCS_OG_SITE_LABEL` | No | Takumi `site` label during OG prebuild (default `Tether`). |
 | `DOCS_OG_CONCURRENCY` | No | Parallelism for OG prebuild (default `3`). |
-| `DOCS_SEO_SILENT` | No | Set to `1` to disable `[@tether/docs-seo]` console warnings for missing optional frontmatter (`ogImage`, `schemaType`, `docType`, `lastModified`). |
+| `DOCS_SEO_SILENT` | No | Set to `1` to disable ALL `[@tether/docs-seo]` console warnings (including required-`description` checks). |
+| `DOCS_SEO_QUIET_GENERATED` | No | Set to `1` to silence only the warnings for fields with auto-generated / inferred defaults (`ogImage`, `schemaType`, `lastModified`). Keeps `description` and `docType` warnings live. |
 
 ## Open Graph images (Takumi, static hosting)
 

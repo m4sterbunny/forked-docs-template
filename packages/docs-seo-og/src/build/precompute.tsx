@@ -4,7 +4,24 @@ import React from 'react';
 import matter from 'gray-matter';
 import { getSlugs } from 'fumadocs-core/source';
 import { ImageResponse } from '@takumi-rs/image-response';
+import type { ImageResponseOptions } from '@takumi-rs/image-response';
 import { generate as OgTemplate } from 'fumadocs-ui/og';
+
+/**
+ * Context provided to a custom {@link PrecomputeTakumiOgImagesOptions.renderTemplate}.
+ */
+export type RenderTemplateContext = {
+  /** Frontmatter `title` (empty string if missing). */
+  title: string;
+  /** Frontmatter `description` (empty string if missing). */
+  description: string;
+  /** Slug segments for the page (e.g. `['building-blocks', 'hyperbee']`). */
+  slugs: string[];
+  /** Same `site` value passed to {@link precomputeTakumiOgImages}. */
+  site: string;
+  /** Raw frontmatter object for advanced templates. */
+  frontmatter: Record<string, unknown>;
+};
 
 export type PrecomputeTakumiOgImagesOptions = {
   /** Absolute or cwd-relative path to `content/docs` */
@@ -17,6 +34,17 @@ export type PrecomputeTakumiOgImagesOptions = {
   ogRouteBase?: string;
   /** Parallel renders; Takumi uses WASM so keep modest (default 3) */
   concurrency?: number;
+  /**
+   * Custom JSX template. Defaults to `fumadocs-ui/og`'s `generate()`.
+   * Use this to brand OG images per site (logo, fonts, colors).
+   */
+  renderTemplate?: (ctx: RenderTemplateContext) => React.ReactElement;
+  /**
+   * Forwarded to `ImageResponse` (e.g. `fonts`, `format`, `emoji`).
+   * `width`, `height`, and `format: 'webp'` are set by default and may be
+   * overridden here.
+   */
+  imageResponseOptions?: Partial<ImageResponseOptions>;
 };
 
 function posixRelative(from: string, to: string): string {
@@ -38,6 +66,8 @@ async function renderOne(
   publicDir: string,
   ogRouteBase: string,
   site: string,
+  renderTemplate: (ctx: RenderTemplateContext) => React.ReactElement,
+  imageResponseOptions: Partial<ImageResponseOptions>,
 ): Promise<void> {
   const rel = posixRelative(contentDocsDir, absFile);
   const slugs = getSlugs(rel);
@@ -51,14 +81,20 @@ async function renderOne(
   const outPath = outputFilePath(publicDir, ogRouteBase, segments);
   await mkdir(path.dirname(outPath), { recursive: true });
 
-  const response = new ImageResponse(
-    <OgTemplate title={title} description={description} site={site} />,
-    {
-      width: 1200,
-      height: 630,
-      format: 'webp',
-    },
-  );
+  const element = renderTemplate({
+    title,
+    description,
+    slugs,
+    site,
+    frontmatter: data,
+  });
+
+  const response = new ImageResponse(element, {
+    width: 1200,
+    height: 630,
+    format: 'webp',
+    ...imageResponseOptions,
+  });
 
   await response.ready;
   const buf = await response.arrayBuffer();
@@ -78,13 +114,17 @@ export async function precomputeTakumiOgImages(
     site,
     ogRouteBase = '/og/docs',
     concurrency = 3,
+    renderTemplate = ({ title, description, site: ogSite }) => (
+      <OgTemplate title={title} description={description} site={ogSite} />
+    ),
+    imageResponseOptions = {},
   } = options;
 
   const docsRoot = path.resolve(contentDocsDir);
   const pubRoot = path.resolve(publicDir);
 
   const { glob } = await import('glob');
-  const absFiles = await glob('**/*.mdx', {
+  const absFiles = await glob('**/*.{md,mdx}', {
     cwd: docsRoot,
     nodir: true,
     absolute: true,
@@ -94,7 +134,15 @@ export async function precomputeTakumiOgImages(
     const batch = absFiles.slice(i, i + concurrency);
     await Promise.all(
       batch.map((absFile) =>
-        renderOne(absFile, docsRoot, pubRoot, ogRouteBase, site),
+        renderOne(
+          absFile,
+          docsRoot,
+          pubRoot,
+          ogRouteBase,
+          site,
+          renderTemplate,
+          imageResponseOptions,
+        ),
       ),
     );
   }

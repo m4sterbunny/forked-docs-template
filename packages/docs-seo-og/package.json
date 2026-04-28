@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/docs-seo-og",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Open Graph images via Fumadocs Takumi for Tether docs",
   "type": "module",
   "main": "./src/index.ts",
