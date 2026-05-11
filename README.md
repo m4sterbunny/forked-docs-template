@@ -127,9 +127,9 @@ During `next build` / dev, `getPageSeoState` and `buildDocsMetadata` emit **`[@t
 
 The same helpers are re-exported from `@tether/docs-seo-schema`, `@tether/docs-seo-core`, `@tether/docs-seo-next`, and `@tether/docs-seo-og` (`warnMissingSeoFrontmatterFields`).
 
-### Notes for the SEO
+### Notes for the SEO OG images
 
-When using the SEO packages from a remote docs site:
+When using the SEO OG packages from a remote docs site:
 - Clone with submodules (or after clone: git submodule update --init --recursive) so src/lib/docs-template is populated.
 - Run `npm install` so workspaces link the @tetherto/docs-seo-* packages from the submodule.
 - Run `npm run build `(or whatever runs prebuild) so `generate-takumi-og.tsx` runs and fills public/og/docs/... for each page.
