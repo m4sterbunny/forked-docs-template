@@ -15,13 +15,13 @@
     "@tetherto/docs-seo-core": "^1.0.0"
   },
   "peerDependencies": {
-    "fumadocs-core": "^16.0.0",
+    "fumadocs-core": "^16.8.0",
     "next": "^15.0.0 || ^16.0.0",
     "react": "^19.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.13",
-    "fumadocs-core": "^16.3.2",
+    "fumadocs-core": "^16.8.0",
     "next": "^16.1.1",
     "react": "^19.2.3",
     "typescript": "^5.9.2"
