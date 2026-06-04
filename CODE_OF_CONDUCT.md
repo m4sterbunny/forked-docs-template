@@ -42,7 +42,7 @@ This Code of Conduct applies to:
 
 The Documentation guild is responsible for enforcing this Code of Conduct.
 
-**Documentation guild representative:** Lucas 
+**Documentation guild representative:** [Lucas](https://github.com/lucas-tortora) 
 
 If you experience or witness unacceptable behavior, report it privately to the Documentation guild representative.
 
