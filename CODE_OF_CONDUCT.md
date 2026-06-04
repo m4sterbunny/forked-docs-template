@@ -50,7 +50,7 @@ Reports will be handled confidentially and reviewed in coordination with the Doc
 
 ## Enforcement guidelines
 
-The MDK team may take any action deemed appropriate, including:
+The Documentation Guild may take any action deemed appropriate, including:
 
 - Warning the participant
 - Temporarily restricting access
