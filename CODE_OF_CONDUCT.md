@@ -3,7 +3,7 @@
 ## Our Commitment
 
 
-The `tether.io` Documentation guild is committed to fostering an open, professional, and respectful community.
+The `tether.io` Documentation Guild is committed to fostering an open, professional, and respectful community.
 
 We welcome contributors of all backgrounds and experience levels. Participation in Documentation guild resource building should be harassment-free and inclusive for everyone.
 
