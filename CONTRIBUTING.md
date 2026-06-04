@@ -304,7 +304,7 @@ This is an **idea** callout — use for tips or suggestions.
 Inherits from the opinionated style, with the following additions:
 
 > [!NOTE]
-> description: Style guide for MDK tutorials
+> description: Style guide for Documentation Guild tutorials
 > context: globs: docs/tutorials/**/*.md
 
 #### Tutorial frontmatter
