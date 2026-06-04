@@ -9,7 +9,7 @@ We welcome contributors of all backgrounds and experience levels. Participation 
 
 ## Expected Behavior
 
-All participants in the `tether.io`Documentation guild community are expected to:
+All participants in the `tether.io` Documentation guild community are expected to:
 
 - Be respectful and constructive in communication
 - Provide helpful and professional feedback
