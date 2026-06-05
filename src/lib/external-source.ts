@@ -37,6 +37,8 @@ export async function fetchExternalContent(url: string): Promise<string> {
     content = content.slice(frontmatterMatch[0].length);
   }
 
+  content = content.replace(/^\s*(?:import|export)\s+[^\n]*$/gm, '');
+
   contentCache.set(url, { content, timestamp: Date.now() });
 
   return content;
