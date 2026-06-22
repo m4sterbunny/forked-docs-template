@@ -1,0 +1,18 @@
+---
+title: Source Public Docs With Stubs
+slug: how-tos/single-source/source-public-docs-with-stubs
+description: Publish public documentation pages from source-owned content while keeping local stubs for navigation and metadata.
+docType: how-to
+---
+
+# Source Public Docs With Stubs
+
+Use stubs when a page should appear in the local docs structure, but the main content is maintained in another source. The stub owns local metadata, navigation, and any wrapper content, while the external source provides the body.
+
+## Recommended Pattern
+
+1. Create a local MDX page with the title, description, and slug.
+2. Add any local intro or callout content that should stay with the docs site.
+3. Render the sourced content inside the page body.
+
+This keeps navigation and SEO metadata stable while allowing the source documentation to remain authoritative.
