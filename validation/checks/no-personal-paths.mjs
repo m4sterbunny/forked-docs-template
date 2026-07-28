@@ -77,7 +77,7 @@ function* walkFiles(dir, extensions = ['.md', '.mdx', '.js', '.mjs', '.ts', '.ts
       
       if (stat.isDirectory()) {
         // Skip common non-source directories
-        if (['.git', 'node_modules', '.next', 'out', 'dist', 'build', '.cursor'].includes(entry)) {
+        if (['.git', 'node_modules', '.next', 'out', 'dist', 'build', '.cursor', '.claude'].includes(entry)) {
           continue;
         }
         yield* walkFiles(fullPath, extensions);

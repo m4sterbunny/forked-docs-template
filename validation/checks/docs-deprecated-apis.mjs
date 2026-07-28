@@ -37,23 +37,72 @@ function loadConfig() {
 
 // Filter out overly generic terms that cause false positives
 const GENERIC_TERMS = new Set([
-  'name', 'type', 'data', 'info', 'value', 'id', 'key', 'version', 
+  'name', 'type', 'data', 'info', 'value', 'id', 'key', 'version',
   'status', 'state', 'config', 'options', 'params', 'result', 'response',
   'request', 'error', 'message', 'description', 'title', 'auth', 'user',
   'get', 'set', 'create', 'update', 'delete', 'list', 'find'
 ]);
 
-function parseChangelogForDeprecations(content) {
-  const deprecated = {
-    functions: new Set(),
-    packages: new Set(),
-    paths: new Set(),
-    classes: new Set()
+// Language/runtime keywords that show up in "old" code examples purely as
+// syntax (e.g. every `require(...)` call), not as part of the deprecated API
+// surface itself.
+const BUILTIN_DENYLIST = new Set([
+  'require', 'module', 'exports', 'console', 'process', 'global',
+  'Object', 'Array', 'Promise', 'JSON', 'Map', 'Set', 'Error'
+]);
+
+// A markdown table only documents a rename/removal if it sits under a
+// heading that says so — most tables in a changelog are plain reference
+// tables (glossaries, "Added" feature lists) whose first column is not an
+// old identifier at all.
+const DEPRECATION_HEADING = /deprecat|removed?|breaking|renam|migrat/i;
+
+// Splits content into sections at each heading, tagging each with the full
+// ancestor heading chain (not just the nearest heading) — a subsection like
+// "#### Command state machine" only reveals it's part of a "## Added" (not
+// "## Breaking changes") parent once ancestors are tracked, and a subsection
+// like "### Core MDK API replaced" only reads as a breaking change via its
+// "## Breaking changes" ancestor since its own heading text doesn't say so.
+function splitIntoSections(content) {
+  const lines = content.split('\n');
+  const sections = [];
+  const headingStack = [];
+  let buffer = [];
+  let headingLine = '';
+
+  const flush = () => {
+    if (buffer.length || headingLine) {
+      // The heading line itself is included in the section text — a rename
+      // like "### `old` renamed to `new`" is often stated entirely in the
+      // heading, with the body just referring back to "the rename" in prose.
+      const text = headingLine ? [headingLine, ...buffer].join('\n') : buffer.join('\n');
+      sections.push({ heading: headingStack.map(h => h.text).join(' > '), text });
+      buffer = [];
+    }
   };
-  
+
+  for (const line of lines) {
+    const match = line.match(/^(#{1,6})\s+(.+)$/);
+    if (match) {
+      flush();
+      const level = match[1].length;
+      while (headingStack.length && headingStack[headingStack.length - 1].level >= level) {
+        headingStack.pop();
+      }
+      headingStack.push({ level, text: match[2] });
+      headingLine = line;
+    } else {
+      buffer.push(line);
+    }
+  }
+  flush();
+  return sections;
+}
+
+function extractDeprecatedFromTables(sectionText, deprecated) {
   // Match markdown tables with old → new mappings
   const tablePattern = /\|([^|]+)\|([^|]+)\|[^\n]*\n\|[^|]+\|[^|]+\|[^\n]*\n((?:\|[^|]+\|[^|]+\|[^\n]*\n)+)/g;
-  for (const match of content.matchAll(tablePattern)) {
+  for (const match of sectionText.matchAll(tablePattern)) {
     const rows = match[3].trim().split('\n');
     for (const row of rows) {
       const [, oldVal, newVal] = row.split('|').map(s => s.trim());
@@ -79,16 +128,18 @@ function parseChangelogForDeprecations(content) {
       }
     }
   }
-  
+}
+
+function extractDeprecatedFromRenames(sectionText, deprecated) {
   // Match "X renamed to Y" / "X → Y" patterns
   const renamePatterns = [
     /`([^`]+)`\s+(?:renamed to|→)\s+`([^`]+)`/g,
     /`([^`]+)`\s+\([^)]*\)\s+→\s+`([^`]+)`/g,
     /`([^`]+)`\s+replaced by\s+`([^`]+)`/g
   ];
-  
+
   for (const pattern of renamePatterns) {
-    for (const match of content.matchAll(pattern)) {
+    for (const match of sectionText.matchAll(pattern)) {
       const oldId = match[1];
       if (oldId.includes('(')) {
         deprecated.functions.add(oldId.replace(/\(\)$/, ''));
@@ -99,10 +150,12 @@ function parseChangelogForDeprecations(content) {
       }
     }
   }
-  
+}
+
+function extractDeprecatedFromCodeBlocks(sectionText, deprecated) {
   // Match code blocks with // 0.0.1 vs // 0.2.0 comparisons
   const codeBlockPattern = /```[a-z]*\n([\s\S]*?)```/g;
-  for (const match of content.matchAll(codeBlockPattern)) {
+  for (const match of sectionText.matchAll(codeBlockPattern)) {
     const code = match[1];
     if (code.includes('// 0.0.1') || code.includes('// 0.2.0') || code.includes('// 0.4.')) {
       // Extract old version identifiers
@@ -117,29 +170,33 @@ function parseChangelogForDeprecations(content) {
           inOldSection = false;
           continue;
         }
-        
+
         if (inOldSection) {
-          // Extract function calls: functionName(
+          // Extract function calls: functionName( — skipping language/runtime
+          // built-ins (require, console, ...), which appear in both the old
+          // and new examples and aren't part of the deprecated API surface.
           const funcs = line.matchAll(/\b([a-z][a-zA-Z0-9_]*)\(/g);
           for (const f of funcs) {
-            deprecated.functions.add(f[1]);
+            if (!BUILTIN_DENYLIST.has(f[1])) deprecated.functions.add(f[1]);
           }
           // Extract identifiers from destructuring: { foo, bar }
           const destructure = line.match(/\{\s*([^}]+)\s*\}/);
           if (destructure) {
             const ids = destructure[1].split(',').map(s => s.trim());
             for (const id of ids) {
-              deprecated.functions.add(id);
+              if (!BUILTIN_DENYLIST.has(id)) deprecated.functions.add(id);
             }
           }
         }
       }
     }
   }
-  
+}
+
+function extractDeprecatedFromRemovedBullets(sectionText, deprecated) {
   // Match "X removed" / "X deleted" patterns
   const removedPattern = /(?:^|\n)[-*]\s+(?:\*\*)?([^*\n]+?)(?:\*\*)?\s+(?:removed|deleted|retired)/gmi;
-  for (const match of content.matchAll(removedPattern)) {
+  for (const match of sectionText.matchAll(removedPattern)) {
     const item = match[1].trim();
     const inBackticks = item.match(/`([^`]+)`/);
     if (inBackticks) {
@@ -150,6 +207,28 @@ function parseChangelogForDeprecations(content) {
         deprecated.functions.add(id.replace(/\(\)$/, ''));
       }
     }
+  }
+}
+
+function parseChangelogForDeprecations(content) {
+  const deprecated = {
+    functions: new Set(),
+    packages: new Set(),
+    paths: new Set(),
+    classes: new Set()
+  };
+
+  // All four extractors are gated the same way: a section (identified by its
+  // full ancestor heading chain, not just its own heading text) only
+  // contributes "deprecated" terms if it's actually about deprecation,
+  // removal, or a breaking rename/migration — not every reference table or
+  // code sample in the changelog describes something going away.
+  for (const section of splitIntoSections(content)) {
+    if (!DEPRECATION_HEADING.test(section.heading)) continue;
+    extractDeprecatedFromTables(section.text, deprecated);
+    extractDeprecatedFromRenames(section.text, deprecated);
+    extractDeprecatedFromCodeBlocks(section.text, deprecated);
+    extractDeprecatedFromRemovedBullets(section.text, deprecated);
   }
   
   return {
@@ -212,7 +291,7 @@ function loadDeprecatedFromChangelogs(config) {
   
   // Deduplicate and filter
   allDeprecated.functions = [...new Set(allDeprecated.functions)]
-    .filter(f => f && f.length >= 4 && !GENERIC_TERMS.has(f.toLowerCase()));
+    .filter(f => f && f.length >= 4 && !GENERIC_TERMS.has(f.toLowerCase()) && !BUILTIN_DENYLIST.has(f));
   allDeprecated.packages = [...new Set(allDeprecated.packages)]
     .filter(p => p && p.length >= 4);
   allDeprecated.paths = [...new Set(allDeprecated.paths)]
@@ -223,20 +302,28 @@ function loadDeprecatedFromChangelogs(config) {
   return allDeprecated;
 }
 
+// Historical-record files are where the "deprecated" terms come from in the
+// first place — scanning them as targets is tautological (they always
+// mention old names by design, since that's what a changelog/release-note is
+// for) and would drown out real hits in living docs.
+const HISTORICAL_RECORD_DIRS = new Set(['changelog-archive', 'release-notes']);
+const HISTORICAL_RECORD_FILES = new Set(['CHANGELOG.md', 'checklist.md']);
+
 function* walkMarkdownFiles(dir) {
   try {
     const entries = readdirSync(dir);
-    
+
     for (const entry of entries) {
       const fullPath = join(dir, entry);
       const stat = statSync(fullPath);
-      
+
       if (stat.isDirectory()) {
-        if (['.git', 'node_modules', '.next', 'out', 'dist', 'build'].includes(entry)) {
+        if (['.git', 'node_modules', '.next', 'out', 'dist', 'build', '.cursor', '.claude'].includes(entry) ||
+            HISTORICAL_RECORD_DIRS.has(entry)) {
           continue;
         }
         yield* walkMarkdownFiles(fullPath);
-      } else if (entry.endsWith('.md') || entry.endsWith('.mdx')) {
+      } else if ((entry.endsWith('.md') || entry.endsWith('.mdx')) && !HISTORICAL_RECORD_FILES.has(entry)) {
         yield fullPath;
       }
     }
