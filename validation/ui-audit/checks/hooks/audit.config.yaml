@@ -1,0 +1,22 @@
+# CI stub — local runs use audit.config-local.yaml only (not merged).
+
+defaultSource: public
+
+sources:
+  public:
+    purpose: Public UI client
+    ciManifestClone:
+      ownerRepo: tetherto/mdk
+      ref: main
+    expectedBranch: main
+    githubBaseUrl: https://github.com/tetherto/mdk
+    pathInsideGithubRepo: ui-client
+
+  private:
+    purpose: mdk-ui staging
+    ciManifestClone:
+      ownerRepo: tetherto/mdk-ui
+      ref: develop
+    expectedBranch: develop
+    githubBaseUrl: https://github.com/tetherto/mdk-ui
+    pathInsideGithubRepo: ""

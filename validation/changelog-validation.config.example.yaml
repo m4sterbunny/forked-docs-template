@@ -1,0 +1,27 @@
+# Changelog Validation Configuration Example
+#
+# Copy this file to changelog-validation.config.yaml and update with your repo paths.
+# changelog-validation.config.yaml is git-ignored and will never be committed.
+#
+# SETUP:
+#   cp changelog-validation.config.example.yaml changelog-validation.config.yaml
+#   # Edit changelog-validation.config.yaml with your actual paths
+
+# Repository containing the changelog to validate
+repo:
+  path: /path/to/fork-mdk-prv
+  branch: main  # Branch where CHANGELOG.md lives
+  
+# Relative path from repo root to changelog archive directory
+changelog_archive_path: docs/reference/changelog-archive
+
+# Version detection patterns
+version_detection:
+  # Pattern to extract current version from CHANGELOG.md
+  current_version_pattern: "^## v(\\d+\\.\\d+\\.\\d+)"
+  
+  # Archive file naming pattern (use {version} placeholder)
+  archive_file_pattern: "{version}-archive.md"
+  
+  # Example: v0.5.0 → looks for "2026-archive.md" or "v0-4-0-archive.md"
+  # The check will try common patterns automatically

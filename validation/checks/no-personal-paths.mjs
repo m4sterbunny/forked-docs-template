@@ -21,12 +21,28 @@ import { join } from 'node:path';
 
 export const checkName = 'no-personal-paths';
 
+// A username segment stops at a path separator, whitespace, or any character
+// that ordinarily terminates a path inside source code (quotes, brackets,
+// punctuation). Without those terminators the match swallows the closing quote
+// of './home/foo', which then surfaces as the reported username.
+const USER_SEGMENT = "[^\\/\\\\\\s'\"`,;:)\\]}<>]+";
+
+// Personal paths are absolute, so reject a match preceded by "." or a word
+// character — otherwise the relative import './home/foo' reads as /home/foo,
+// and 'src/Users/bar' reads as /Users/bar.
+const NOT_PATH_TAIL = '(?<![\\w.~])';
+
 // Patterns that indicate personal paths
 const PERSONAL_PATH_PATTERNS = [
-  /\/Users\/[^\/\s]+/g,           // macOS: /Users/username
-  /\/home\/[^\/\s]+/g,            // Linux: /home/username
-  /C:\\Users\\[^\\s]+/gi,         // Windows: C:\Users\username
-  /\\Users\\[^\\s]+/g,            // Windows alt: \Users\username
+  // macOS: /Users/username
+  new RegExp(`${NOT_PATH_TAIL}\\/Users\\/${USER_SEGMENT}`, 'g'),
+  // Linux: /home/username
+  new RegExp(`${NOT_PATH_TAIL}\\/home\\/${USER_SEGMENT}`, 'g'),
+  // Windows: C:\Users\username
+  new RegExp(`${NOT_PATH_TAIL}C:\\\\Users\\\\${USER_SEGMENT}`, 'gi'),
+  // Windows alt: \Users\username. Also rejects a preceding ":" so a drive-letter
+  // path isn't reported twice, once by this pattern and once by the one above.
+  new RegExp(`(?<![\\w.~:])\\\\Users\\\\${USER_SEGMENT}`, 'g'),
 ];
 
 // Exceptions - lines that contain these are allowed
@@ -109,10 +125,13 @@ function checkFileForPersonalPaths(filePath) {
       for (const match of matches) {
         const path = match[0];
         
-        // Extract just the username part for reporting
-        const usernameMatch = path.match(/\/(Users|home)\/([^\/\s]+)/) || 
-                             path.match(/Users\\([^\\s]+)/);
-        const username = usernameMatch ? usernameMatch[2] || usernameMatch[1] : 'unknown';
+        // Extract just the username part for reporting. Same segment rule as
+        // the patterns above, and either separator, so Windows paths report a
+        // whole username rather than truncating at the first "s".
+        const usernameMatch = path.match(
+          new RegExp(`(?:Users|home)[\\/\\\\](${USER_SEGMENT})`, 'i')
+        );
+        const username = usernameMatch ? usernameMatch[1] : 'unknown';
         
         violations.push({
           line: i + 1,

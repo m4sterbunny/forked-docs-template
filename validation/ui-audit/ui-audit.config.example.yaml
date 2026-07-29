@@ -1,0 +1,108 @@
+# UI Audit Configuration Example
+#
+# Copy this file to ui-audit.config.yaml and update with your local paths.
+# ui-audit.config.yaml is git-ignored and will never be committed.
+#
+# SETUP:
+#   cp ui-audit.config.example.yaml ui-audit.config.yaml
+#   # Edit ui-audit.config.yaml with your actual paths
+#   npm install
+#   npm run audit
+
+# Target repositories to audit
+# The audit can run against multiple repos (e.g., docs and source)
+targets:
+  # Documentation repo target
+  - name: mdk-docs
+    path: /path/to/mdk-docs
+    branch: staging  # Documentation only - you must checkout this branch
+    type: docs       # Type hint for audit behavior
+    enabled: true
+    
+  # Source code repo target
+  - name: mdk-prv
+    path: /path/to/fork-mdk-prv
+    branch: main     # Documentation only - you must checkout this branch
+    type: source     # Source code repo
+    enabled: true
+
+# Audit lane configuration
+audit:
+  # Component audit (demo-app)
+  demo_app:
+    enabled: true
+    catalog: catalogs/components.json
+    dont_document: catalogs/dont-document-components.json
+    document_when_fixed: catalogs/document-when-fixed.json
+    
+    # Sources configuration (similar to old audit.config-local.yaml)
+    defaultSource: private
+    sources:
+      public:
+        # ui-client layout: packages/core + packages/foundation + apps/demo
+        localPathToRepo: /path/to/mdk/ui-client
+        branch: main
+        demoAppDirectory: apps/demo
+        publicSurface:
+          mode: from_repo
+      
+      private:
+        # mdk-ui layout: packages/react-devkit + api/*.public-surface.json + apps/demo
+        localPathToRepo: /path/to/fork-mdk-ui
+        branch: develop
+        pathInsideGithubRepo: ""
+        demoAppDirectory: apps/demo
+        publicSurface:
+          mode: from_repo
+  
+  # Hooks audit
+  hooks:
+    enabled: true
+    catalog: catalogs/hooks.json
+    dont_document: catalogs/dont-document-hooks.json
+    source_path: /path/to/fork-mdk-ui  # or wherever hooks are defined
+    
+  # UI Core utilities audit
+  ui_core:
+    enabled: true
+    catalog: catalogs/utilities.json
+    dont_document: catalogs/dont-document-utilities.json
+    source_path: /path/to/fork-mdk-ui  # or wherever utilities are defined
+
+# Output configuration
+output:
+  # Where to write audit results
+  results_dir: ./results
+  
+  # Report formats
+  formats:
+    - json
+    - markdown
+  
+  # Baseline comparison (optional)
+  baseline:
+    enabled: false
+    path: ./baseline/audit-results.json
+
+# Notification settings (optional)
+notifications:
+  slack:
+    enabled: false
+    webhook_url: ""
+    channels:
+      - "#docs-qa"
+  
+  github:
+    enabled: false
+    create_step_summary: true
+
+# Verify settings
+verify:
+  # Structural smoke checks
+  enabled: true
+  
+  # Classification thresholds
+  classify:
+    severity:
+      error_threshold: 0   # Fail if any errors
+      warning_threshold: 5  # Fail if more than 5 warnings

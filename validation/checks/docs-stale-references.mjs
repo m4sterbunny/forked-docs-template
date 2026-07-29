@@ -185,7 +185,7 @@ export async function run(targetPath) {
   
   if (!sourcePath || !existsSync(sourcePath)) {
     return {
-      passed: true,
+      passed: null,  // no verdict — `skipped` is the authoritative signal
       skipped: true,
       reason: sourcePath ? `Source repo not found: ${sourcePath}` : 'No source_repo configured in config.yaml'
     };

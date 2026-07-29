@@ -1,5 +1,6 @@
 # Local configuration (contains personal paths)
 config.yaml
+changelog-validation.config.yaml
 
 # Node modules
 node_modules/

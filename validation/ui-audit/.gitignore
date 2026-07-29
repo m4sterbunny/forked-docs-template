@@ -1,0 +1,28 @@
+# Local configuration (copy from .example.yaml)
+ui-audit.config.yaml
+ui-audit.config-local.yaml
+
+# Audit results
+results/
+*.audit.json
+components-audit.json
+hooks-audit.json
+utilities-audit.json
+props-audit/
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# OS files
+.DS_Store
+Thumbs.db

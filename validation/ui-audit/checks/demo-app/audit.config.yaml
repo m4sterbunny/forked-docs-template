@@ -1,0 +1,43 @@
+# =============================================================================
+# CI / GitHub — not used for npm run audit:demo (local uses audit.config-local.yaml only)
+# =============================================================================
+#
+# Used when: npm run audit:demo:ci, or node …/audit.mjs with CI=true / GITHUB_ACTIONS=true.
+# Parked drift/smoke jobs may overwrite this file on the runner with ephemeral paths.
+#
+# This file must not contain local disk paths (safe for PRs). It carries GitHub identity
+# (ciManifestClone, githubBaseUrl, pathInsideGithubRepo, …) for automation and team defaults.
+#
+# Local runs read only gitignored audit.config-local.yaml — explicit docsSiteRoot, docsBranch,
+# localPathToRepo, branch (see audit.config-local.example.yaml). The two files are not merged.
+#
+# print-ci-manifest-source.mjs (MDX job, parked) reads ciManifestClone from this file.
+# Legacy key aliases: see normalizeSourceEntry in audit.mjs.
+# =============================================================================
+
+defaultSource: public
+
+sources:
+  public:
+    purpose: Production docs — public monorepo (tetherto/mdk ui-client)
+    ciManifestClone:
+      ownerRepo: tetherto/mdk
+      ref: main
+    expectedBranch: main
+    githubBaseUrl: https://github.com/tetherto/mdk
+    pathInsideGithubRepo: ui-client
+    publishedDocsBaseUrl: https://docs.mdk.tether.io
+    demoAppDirectory: apps/demo
+    publicSurface:
+      mode: from_repo
+
+  private:
+    purpose: Staging app — tetherto/mdk-ui
+    ciManifestClone:
+      ownerRepo: tetherto/mdk-ui
+      ref: develop
+    expectedBranch: develop
+    githubBaseUrl: https://github.com/tetherto/mdk-ui
+    pathInsideGithubRepo: ""
+    publishedDocsBaseUrl: ""
+    demoAppDirectory: apps/demo

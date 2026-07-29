@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "validate": "node run-all.mjs",
+    "validate:changelog": "node checks/changelog-outcome-vs-narration.mjs",
     "test": "node run-all.mjs test-fixtures/"
   },
   "dependencies": {

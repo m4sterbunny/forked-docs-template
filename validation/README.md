@@ -139,6 +139,60 @@ Finds function/class names mentioned in docs that don't exist in the source code
 
 ---
 
+## Standalone Checks
+
+These checks run independently with their own config files and are NOT included in `run-all.mjs`.
+
+### 5. [Changelog Outcome vs Narration](./checks/changelog-outcome-vs-narration.mjs) 🔥 HIGH PRIORITY
+
+Validates that CHANGELOG documents version-to-version outcomes, not sprint-level narration.
+
+**How it works:**
+1. Parses current CHANGELOG.md for "Removed" items
+2. Parses previous version's archived changelog
+3. Flags any "Removed" item that doesn't appear in previous version
+4. Indicates the item was added and removed within the same sprint
+
+**Separate config:** Uses `changelog-validation.config.yaml` (NOT `config.yaml`)
+
+**Setup:**
+```bash
+cd validation
+cp changelog-validation.config.example.yaml changelog-validation.config.yaml
+# Edit with repo path and branch
+```
+
+**Config:**
+```yaml
+repo:
+  path: /path/to/fork-mdk-prv
+  branch: release/0.6.0  # Branch with CHANGELOG.md
+  
+changelog_archive_path: docs/reference/changelog-archive
+```
+
+**Run (standalone):**
+```bash
+node checks/changelog-outcome-vs-narration.mjs
+```
+
+**NOT included in:**
+```bash
+node run-all.mjs  # Does NOT run changelog validation
+```
+
+**Why:** Changelogs should document the final state (v0.5.0 → v0.6.0), not intermediate sprint churn. If something was added on day 2 and removed by day 8, it shouldn't appear in the changelog at all.
+
+**Example violation:**
+```
+❌ microbt container workers:
+  ✗ Listed as REMOVED in v0.6.0
+  ✗ NOT FOUND in v0.5.0 changelog
+  → Suspected narration: Added and removed within same sprint
+```
+
+---
+
 ## Configuration
 
 **First time setup:**
@@ -184,6 +238,26 @@ Run all checks against a repository:
 cd /path/to/forked-docs-template/validation
 node run-all.mjs /path/to/target-repo
 ```
+
+### Pass, fail, and skip
+
+The runner reports three states, not two:
+
+| State | Meaning | Exit code |
+|---|---|---|
+| ✅ Passed | Ran, found nothing | 0 |
+| ❌ Failed | Ran, found violations | 1 |
+| ⚠️ Skipped | **Did not run** — usually a missing `config.yaml` | 0 (warning) |
+
+A skip is not a pass. `docs-deprecated-apis` and `docs-stale-references` both need `source_repo.path` in `config.yaml`, which is git-ignored — so in a fresh clone or a CI runner they skip by default and the run still exits 0.
+
+To require that every check actually ran:
+
+```bash
+node run-all.mjs /path/to/target-repo --strict   # skips become failures
+```
+
+Use `--strict` in any pipeline where a silently-unconfigured check would be worse than a red build.
 
 ### Run Individual Check
 

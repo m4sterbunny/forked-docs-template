@@ -1,0 +1,30 @@
+{
+  "components": [
+    {
+      "name": "OfflineIcon",
+      "summary": "Offline indicator",
+      "description": "Shows offline state in the UI.",
+      "package": "core",
+      "section": "components",
+      "category": "Icons",
+      "subcategory": "Status",
+      "demo": null,
+      "hasDetailPage": false,
+      "publicApiKind": "icon",
+      "maintainerNotes": "Source file exists but isn't exported from @tetherto/mdk-react-devkit/core (upstream barrel gap). Awaiting an upstream export fix; see comment in content/docs/v0-2-0/ui/react/core/icons.mdx."
+    },
+    {
+      "name": "SelectSeparator",
+      "summary": "Visual separator between select option groups",
+      "description": "Thin divider rendered between option groups inside a Select dropdown.",
+      "package": "core",
+      "section": "components",
+      "category": "Forms",
+      "subcategory": null,
+      "demo": null,
+      "hasDetailPage": false,
+      "publicApiKind": "component",
+      "maintainerNotes": "Source component exists in the core package but is not exported from the public barrel (@tetherto/mdk-react-devkit/core). Likely a barrel omission. FE to confirm: (a) intentionally unexported or (b) should be exported alongside the other Select* slots. Once exported, move this entry to components.json and set hasDetailPage as appropriate."
+    }
+  ]
+}

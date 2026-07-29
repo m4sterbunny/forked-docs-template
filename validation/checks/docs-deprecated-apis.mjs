@@ -390,7 +390,7 @@ export async function run(targetPath) {
   
   if (!config?.source_repo?.path) {
     return {
-      passed: true,
+      passed: null,  // no verdict — `skipped` is the authoritative signal
       skipped: true,
       reason: 'No source_repo.path configured in config.yaml'
     };
@@ -401,9 +401,9 @@ export async function run(targetPath) {
   if (deprecated.functions.length === 0 && deprecated.packages.length === 0 && 
       deprecated.classes.length === 0 && deprecated.paths.length === 0) {
     return {
-      passed: true,
+      passed: null,  // no verdict — nothing to check against, not a clean repo
       skipped: true,
-      reason: 'No deprecated APIs found in changelogs'
+      reason: 'No deprecated APIs extracted from changelogs — check changelog_archives paths'
     };
   }
   
