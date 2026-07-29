@@ -1,0 +1,372 @@
+# Nightly docs vs upstream audit:
+# - Phase 1: public tetherto/mdk (always)
+# - Phase 5: private tetherto/mdk-ui (skipped unless MDK_UI_REPO_TOKEN is configured)
+# Docs checkout uses github.ref: schedule → repo default branch; workflow_dispatch → branch you pick.
+# (Hardcoding main breaks forks with no main or when testing a feature branch.)
+
+name: Audit drift
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  nightly-audit-public:
+    name: Nightly audit (public)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: audit-drift-public
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout mdk-docs
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Clone upstream public monorepo
+        run: |
+          set -euo pipefail
+          git clone --depth 1 -b main \
+            "https://github.com/tetherto/mdk.git" \
+            "$RUNNER_TEMP/mdk-upstream"
+          echo "UPSTREAM_SHA=$(git -C "$RUNNER_TEMP/mdk-upstream" rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Write audit.config.yaml
+        run: |
+          set -euo pipefail
+          REPOPATH="$RUNNER_TEMP/mdk-upstream/ui-client"
+          {
+            echo "default: public"
+            echo "sources:"
+            echo "  public:"
+            echo "    repo: ${REPOPATH}"
+            echo "    branch: main"
+            echo "    githubUrl: https://github.com/tetherto/mdk"
+            echo "    githubSubpath: ui-client"
+            echo "    docsBaseUrl: https://docs.mdk.tether.io"
+            echo "    demoApp: apps/demo"
+          } > qa/audit-demo-app-local/audit.config.yaml
+
+      - name: Run audit
+        env:
+          MDK_AUDIT_SOURCE: public
+          MDK_AUDIT_OUT_DIR: qa/audit-demo-app-local/runs/public
+          MDK_PUBLIC_REPO: ${{ runner.temp }}/mdk-upstream/ui-client
+          MDK_PUBLIC_BRANCH: main
+        run: node qa/audit-demo-app-local/audit.mjs
+
+      - name: Classify audit
+        run: |
+          npx tsx scripts/classify-audit.ts \
+            --baseline qa/audit-demo-app-local/components-audit.json \
+            --current qa/audit-demo-app-local/runs/public/components-audit.json \
+            --source public \
+            --upstream-sha "$UPSTREAM_SHA" \
+            --upstream-ref "tetherto/mdk@main" \
+            --out qa/audit-demo-app-local/runs/public/audit-report.json
+
+      - name: Notify (Slack or step summary)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: npx tsx scripts/notify-audit.ts --report qa/audit-demo-app-local/runs/public/audit-report.json
+
+      - name: Upsert drift tracking issue
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const fs = require("fs");
+            const source = "public";
+            const title = `Docs drift report (auto, ${source})`;
+            const reportPath = `qa/audit-demo-app-local/runs/${source}/audit-report.json`;
+            const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${owner}/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+
+            const redKeys = [
+              "staleNotInBarrel",
+              "documentedNotInBarrel",
+              "recipeWrongPackage",
+              "missingDirectNotInBarrel",
+            ];
+            const yellowKeys = [
+              "missingDirectInBarrel",
+              "recipeIssuesOther",
+              "propUndocRequired",
+              "companionNotMentioned",
+            ];
+
+            let body = "";
+            body += `**Severity:** ${report.severity.toUpperCase()}\n\n`;
+            body += "| | |\n|---|---|\n";
+            body += `| Source | \`${report.source}\` |\n`;
+            body += `| Upstream | ${report.upstreamRef} |\n`;
+            body += `| SHA | \`${report.upstreamSha}\` |\n`;
+            body += `| Generated | ${report.generatedAt} |\n\n`;
+            body += "### Red buckets\n\n";
+            for (const k of redKeys) {
+              const b = report.absolute[k];
+              const d = report.delta[k] || { added: [], removed: [] };
+              body += `- **${k}:** ${b.count} (Δ +${d.added.length} / −${d.removed.length})\n`;
+              if (b.names?.length) body += `  - ${b.names.slice(0, 8).join("; ")}\n`;
+            }
+            body += "\n### Yellow buckets\n\n";
+            for (const k of yellowKeys) {
+              const b = report.absolute[k];
+              const d = report.delta[k] || { added: [], removed: [] };
+              body += `- **${k}:** ${b.count} (Δ +${d.added.length} / −${d.removed.length})\n`;
+              if (b.names?.length) body += `  - ${b.names.slice(0, 8).join("; ")}\n`;
+            }
+            if (report.topRed?.length) body += `\n**Top red:** ${report.topRed.join(", ")}\n`;
+            if (report.topYellow?.length) body += `\n**Top yellow:** ${report.topYellow.join(", ")}\n`;
+            body += `\n[Workflow run](${runUrl})\n\n`;
+            body += "---\n*Updated automatically by the Audit drift workflow.*\n";
+
+            const q = `repo:${owner}/${repo} is:issue in:title "${title.replace(/"/g, '\\"')}"`;
+            const search = await github.rest.search.issuesAndPullRequests({ q, per_page: 5 });
+            const existing = search.data.items.find((i) => i.title === title);
+
+            if (report.severity === "green") {
+              if (existing && existing.state === "open") {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  body: "Nightly audit is **green**. Closing.",
+                });
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  state: "closed",
+                  state_reason: "completed",
+                });
+              }
+              return;
+            }
+
+            if (existing) {
+              const patch = { owner, repo, issue_number: existing.number, title, body };
+              if (existing.state === "closed") {
+                patch.state = "open";
+                patch.state_reason = "reopened";
+              }
+              await github.rest.issues.update(patch);
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body });
+            }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: audit-public-${{ github.run_id }}
+          path: qa/audit-demo-app-local/runs/public/
+          retention-days: 7
+
+  nightly-audit-private:
+    name: Nightly audit (private / mdk-ui)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: audit-drift-private
+      cancel-in-progress: false
+
+    steps:
+      # secrets context is not allowed in job-level if; gate here instead.
+      - name: Check MDK_UI_REPO_TOKEN
+        id: mdk_ui_token
+        run: |
+          if [ -n "${MDK_UI_REPO_TOKEN}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Private mdk-ui audit skipped (MDK_UI_REPO_TOKEN not set)."
+          fi
+        env:
+          MDK_UI_REPO_TOKEN: ${{ secrets.MDK_UI_REPO_TOKEN }}
+
+      - name: Checkout mdk-docs
+        if: steps.mdk_ui_token.outputs.enabled == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Node.js
+        if: steps.mdk_ui_token.outputs.enabled == 'true'
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.mdk_ui_token.outputs.enabled == 'true'
+        run: npm ci
+
+      - name: Clone mdk-ui (authenticated)
+        if: steps.mdk_ui_token.outputs.enabled == 'true'
+        env:
+          MDK_UI_REPO_TOKEN: ${{ secrets.MDK_UI_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 -b develop \
+            "https://x-access-token:${MDK_UI_REPO_TOKEN}@github.com/tetherto/mdk-ui.git" \
+            "$RUNNER_TEMP/mdk-upstream"
+          echo "UPSTREAM_SHA=$(git -C "$RUNNER_TEMP/mdk-upstream" rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Write audit.config.yaml
+        if: steps.mdk_ui_token.outputs.enabled == 'true'
+        run: |
+          set -euo pipefail
+          REPOPATH="$RUNNER_TEMP/mdk-upstream"
+          {
+            echo "default: private"
+            echo "sources:"
+            echo "  private:"
+            echo "    repo: ${REPOPATH}"
+            echo "    branch: develop"
+            echo "    githubUrl: https://github.com/tetherto/mdk-ui"
+            echo "    githubSubpath: \"\""
+            echo "    docsBaseUrl: \"\""
+            echo "    demoApp: apps/demo"
+          } > qa/audit-demo-app-local/audit.config.yaml
+
+      - name: Run audit
+        if: steps.mdk_ui_token.outputs.enabled == 'true'
+        env:
+          MDK_AUDIT_SOURCE: private
+          MDK_AUDIT_OUT_DIR: qa/audit-demo-app-local/runs/private
+          MDK_PRIVATE_REPO: ${{ runner.temp }}/mdk-upstream
+          MDK_PRIVATE_BRANCH: develop
+          MDK_PRIVATE_GITHUB_URL: https://github.com/tetherto/mdk-ui
+        run: node qa/audit-demo-app-local/audit.mjs
+
+      - name: Classify audit
+        if: steps.mdk_ui_token.outputs.enabled == 'true'
+        run: |
+          npx tsx scripts/classify-audit.ts \
+            --baseline qa/audit-demo-app-local/components-audit.json \
+            --current qa/audit-demo-app-local/runs/private/components-audit.json \
+            --source private \
+            --upstream-sha "$UPSTREAM_SHA" \
+            --upstream-ref "tetherto/mdk-ui@develop" \
+            --out qa/audit-demo-app-local/runs/private/audit-report.json
+
+      - name: Notify (Slack or step summary)
+        if: steps.mdk_ui_token.outputs.enabled == 'true'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: npx tsx scripts/notify-audit.ts --report qa/audit-demo-app-local/runs/private/audit-report.json
+
+      - name: Upsert drift tracking issue
+        if: steps.mdk_ui_token.outputs.enabled == 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const fs = require("fs");
+            const source = "private";
+            const title = `Docs drift report (auto, ${source})`;
+            const reportPath = `qa/audit-demo-app-local/runs/${source}/audit-report.json`;
+            const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${owner}/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+
+            const redKeys = [
+              "staleNotInBarrel",
+              "documentedNotInBarrel",
+              "recipeWrongPackage",
+              "missingDirectNotInBarrel",
+            ];
+            const yellowKeys = [
+              "missingDirectInBarrel",
+              "recipeIssuesOther",
+              "propUndocRequired",
+              "companionNotMentioned",
+            ];
+
+            let body = "";
+            body += `**Severity:** ${report.severity.toUpperCase()}\n\n`;
+            body += "| | |\n|---|---|\n";
+            body += `| Source | \`${report.source}\` |\n`;
+            body += `| Upstream | ${report.upstreamRef} |\n`;
+            body += `| SHA | \`${report.upstreamSha}\` |\n`;
+            body += `| Generated | ${report.generatedAt} |\n\n`;
+            body += "### Red buckets\n\n";
+            for (const k of redKeys) {
+              const b = report.absolute[k];
+              const d = report.delta[k] || { added: [], removed: [] };
+              body += `- **${k}:** ${b.count} (Δ +${d.added.length} / −${d.removed.length})\n`;
+              if (b.names?.length) body += `  - ${b.names.slice(0, 8).join("; ")}\n`;
+            }
+            body += "\n### Yellow buckets\n\n";
+            for (const k of yellowKeys) {
+              const b = report.absolute[k];
+              const d = report.delta[k] || { added: [], removed: [] };
+              body += `- **${k}:** ${b.count} (Δ +${d.added.length} / −${d.removed.length})\n`;
+              if (b.names?.length) body += `  - ${b.names.slice(0, 8).join("; ")}\n`;
+            }
+            if (report.topRed?.length) body += `\n**Top red:** ${report.topRed.join(", ")}\n`;
+            if (report.topYellow?.length) body += `\n**Top yellow:** ${report.topYellow.join(", ")}\n`;
+            body += `\n[Workflow run](${runUrl})\n\n`;
+            body += "---\n*Updated automatically by the Audit drift workflow.*\n";
+
+            const q = `repo:${owner}/${repo} is:issue in:title "${title.replace(/"/g, '\\"')}"`;
+            const search = await github.rest.search.issuesAndPullRequests({ q, per_page: 5 });
+            const existing = search.data.items.find((i) => i.title === title);
+
+            if (report.severity === "green") {
+              if (existing && existing.state === "open") {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  body: "Nightly audit is **green**. Closing.",
+                });
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  state: "closed",
+                  state_reason: "completed",
+                });
+              }
+              return;
+            }
+
+            if (existing) {
+              const patch = { owner, repo, issue_number: existing.number, title, body };
+              if (existing.state === "closed") {
+                patch.state = "open";
+                patch.state_reason = "reopened";
+              }
+              await github.rest.issues.update(patch);
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body });
+            }
+
+      - name: Upload artifacts
+        if: steps.mdk_ui_token.outputs.enabled == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: audit-private-${{ github.run_id }}
+          path: qa/audit-demo-app-local/runs/private/
+          retention-days: 7

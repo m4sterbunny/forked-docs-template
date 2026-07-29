@@ -1,0 +1,108 @@
+{
+  "utilities": [
+    {
+      "name": "ONE_DAY_MS",
+      "summary": "24-hour constant",
+      "description": "One day in milliseconds. The historical-log fetch window size used by the alerts data path.",
+      "package": "ui-core",
+      "section": "utilities",
+      "category": "Alerts",
+      "subcategory": null,
+      "docUrl": null,
+      "demo": null,
+      "hasDetailPage": false,
+      "publicApiKind": "utility"
+    },
+    {
+      "name": "DEFAULT_HISTORICAL_WINDOW_MS",
+      "summary": "14-day default look-back",
+      "description": "Default historical-alerts look-back window (14 days), matching the devkit `<Alerts>` feature default.",
+      "package": "ui-core",
+      "section": "utilities",
+      "category": "Alerts",
+      "subcategory": null,
+      "docUrl": null,
+      "demo": null,
+      "hasDetailPage": false,
+      "publicApiKind": "utility"
+    },
+    {
+      "name": "getDefaultHistoricalAlertsRange",
+      "summary": "Seed range for alert queries",
+      "description": "Returns the default historical-alerts range (the last `DEFAULT_HISTORICAL_WINDOW_MS` ending now). Used to seed range state on the Alerts page.",
+      "package": "ui-core",
+      "section": "utilities",
+      "category": "Alerts",
+      "subcategory": null,
+      "docUrl": null,
+      "demo": null,
+      "hasDetailPage": false,
+      "publicApiKind": "utility"
+    },
+    {
+      "name": "buildCurrentAlertDevicesParams",
+      "summary": "list-things params for current-alert devices",
+      "description": "Builds the `list-things` query params for the current-alerts table: every device that currently carries one or more alerts (1000 limit). Consumed by `useCurrentAlertDevices`.",
+      "package": "ui-core",
+      "section": "utilities",
+      "category": "Alerts",
+      "subcategory": null,
+      "docUrl": null,
+      "demo": null,
+      "hasDetailPage": false,
+      "publicApiKind": "utility"
+    },
+    {
+      "name": "buildHistoricalAlertsParams",
+      "summary": "history-log params for an alert window",
+      "description": "Builds the `history-log` query params for a single alerts window (`logType: 'alerts'`). Called once per 24h sub-window by the chunked fetch.",
+      "package": "ui-core",
+      "section": "utilities",
+      "category": "Alerts",
+      "subcategory": null,
+      "docUrl": null,
+      "demo": null,
+      "hasDetailPage": false,
+      "publicApiKind": "utility"
+    },
+    {
+      "name": "breakTimeIntoIntervals",
+      "summary": "Split a time range into 24h windows",
+      "description": "Splits `[start, end]` into consecutive windows of `intervalMs` (default 24h); the final window is clamped to `end`. Returns an empty array for an empty or inverted range.",
+      "package": "ui-core",
+      "section": "utilities",
+      "category": "Alerts",
+      "subcategory": null,
+      "docUrl": null,
+      "demo": null,
+      "hasDetailPage": false,
+      "publicApiKind": "utility"
+    },
+    {
+      "name": "mergeAlertsByUuid",
+      "summary": "Deduplicate alerts by uuid (later wins)",
+      "description": "Concatenates `next` onto `prev`, replacing any row that shares a `uuid` (later windows win) and appending the rest. Rows without a `uuid` are always appended.",
+      "package": "ui-core",
+      "section": "utilities",
+      "category": "Alerts",
+      "subcategory": null,
+      "docUrl": null,
+      "demo": null,
+      "hasDetailPage": false,
+      "publicApiKind": "utility"
+    },
+    {
+      "name": "fetchHistoricalAlertsInChunks",
+      "summary": "Paginate + merge historical alerts",
+      "description": "Fetches a historical-alerts range as successive 24h windows (oldest to newest), merging results by `uuid`. Swallows individual window failures and bails out early when the `AbortSignal` is aborted.",
+      "package": "ui-core",
+      "section": "utilities",
+      "category": "Alerts",
+      "subcategory": null,
+      "docUrl": null,
+      "demo": null,
+      "hasDetailPage": false,
+      "publicApiKind": "utility"
+    }
+  ]
+}

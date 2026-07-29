@@ -1,0 +1,39 @@
+{
+  "hooks": [
+    {
+      "name": "useContextualModal",
+      "package": "adapter",
+      "reason": "Pool-manager modal open/close state; exported on the adapter barrel but not intended for host apps."
+    },
+    {
+      "name": "useListViewFilters",
+      "package": "foundation",
+      "reason": "Pool-manager miner-explorer list-view cascader wiring; not intended for host apps."
+    },
+    {
+      "name": "useNominalConfig",
+      "package": "adapter",
+      "reason": "Reporting-tool internal hook; exported from adapter but not intended for host apps."
+    },
+    {
+      "name": "useStaticMinerIpAssignment",
+      "package": "adapter",
+      "reason": "Feature-flag hardcoded to true (mock); behavior will change before 1.0."
+    },
+    {
+      "name": "useMinerDuplicateValidation",
+      "package": "adapter",
+      "reason": "Validates against hardcoded mock inventory, not the host's device store; will change before 1.0."
+    },
+    {
+      "name": "useContainerThresholds",
+      "package": "foundation",
+      "reason": "handleSave returns fake success after 500ms (mock); will change before 1.0."
+    },
+    {
+      "name": "useSingleSeriesBarLegend",
+      "package": "foundation",
+      "reason": "Internal reporting-tool utility; not barrel-exported. Consolidates single-series bar chart legend toggle state inside efficiency and hashrate bar views."
+    }
+  ]
+}

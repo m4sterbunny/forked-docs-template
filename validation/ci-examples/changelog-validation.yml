@@ -1,0 +1,97 @@
+# Changelog outcome-vs-narration validation.
+#
+# Runs the standalone check that is deliberately excluded from run-all.mjs:
+# it needs a config object (repo path + archive path) rather than the runner's
+# single target path, and it only means anything when CHANGELOG.md's current
+# "## vX.Y.Z" section changes. Hence the paths filter below rather than the
+# per-PR trigger the other checks use.
+#
+# ADVISORY ONLY (continue-on-error: true). The check currently reports false
+# positives on correct changelogs — it verifies removals against prior
+# changelog *prose* rather than the prior release tag, so anything that shipped
+# without an explicit "Added" entry is flagged. Do not make this blocking until
+# that is fixed; see CHECKS.md.
+#
+# Usage:
+#   1. Copy to .github/workflows/changelog-validation.yml in the repo that owns
+#      CHANGELOG.md (not the docs-template repo — the check reads the source
+#      repo's changelog and archive).
+#   2. Update the branches, and the paths filter if your archive lives elsewhere.
+#   3. Drop continue-on-error once the check is trustworthy enough to gate.
+
+name: Changelog validation
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "CHANGELOG.md"
+      - "docs/reference/changelog-archive/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  changelog-narration:
+    name: Outcome vs narration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source repo (full history for release tags)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Unshallow: the check compares against archived versions, and the
+          # planned git-tag verification needs the release tags present.
+          fetch-depth: 0
+          path: source
+
+      - name: Checkout validation checks
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          repository: tetherto/docs-template
+          ref: main
+          path: docs-template
+
+      - name: Set up Node
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install validation dependencies
+        working-directory: docs-template/validation
+        run: npm install --no-audit --no-fund
+
+      - name: Write config
+        working-directory: docs-template/validation
+        run: |
+          cat > changelog-validation.config.yaml <<EOF
+          repo:
+            path: ${{ github.workspace }}/source
+            branch: ${{ github.head_ref || github.ref_name }}
+
+          changelog_archive_path: docs/reference/changelog-archive
+          EOF
+
+      - name: Validate changelog
+        id: validate
+        continue-on-error: true
+        working-directory: docs-template/validation
+        run: npm run validate:changelog
+
+      - name: Summarise
+        if: always()
+        run: |
+          if [ "${{ steps.validate.outcome }}" = "success" ]; then
+            echo "✅ No narration detected" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⚠️ Changelog check reported findings — advisory, not blocking." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Verify each flagged removal against the previous release tag before acting:" >> "$GITHUB_STEP_SUMMARY"
+            echo '`git ls-tree -d --name-only v<prev>:<path>` / `git show v<prev>:<file>`' >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "An item that existed at the previous tag is a false positive." >> "$GITHUB_STEP_SUMMARY"
+          fi
