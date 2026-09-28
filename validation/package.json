@@ -1,0 +1,14 @@
+{
+  "name": "@tether/mdk-validation",
+  "version": "1.0.0",
+  "description": "PR validation checks for MDK repositories",
+  "type": "module",
+  "scripts": {
+    "validate": "node run-all.mjs",
+    "validate:changelog": "node checks/changelog-outcome-vs-narration.mjs",
+    "test": "node run-all.mjs test-fixtures/"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

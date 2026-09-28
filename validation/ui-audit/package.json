@@ -1,0 +1,45 @@
+{
+  "name": "@tetherto/ui-audit-validation",
+  "version": "1.0.0",
+  "description": "Standalone UI documentation coverage testing and audit system",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.14.0 <25",
+    "npm": ">=11.9.0 <12"
+  },
+  "scripts": {
+    "audit": "node run-audit.mjs",
+    "audit:demo": "npx tsx checks/demo-app/audit.mjs --audit-profile=local",
+    "audit:demo:ci": "npx tsx checks/demo-app/audit.mjs --audit-profile=ci",
+    "audit:hooks": "npx tsx checks/hooks/audit.mjs --audit-profile=local",
+    "audit:hooks:ci": "npx tsx checks/hooks/audit.mjs --audit-profile=ci",
+    "audit:ui-core": "npx tsx checks/ui-core/audit.mjs --audit-profile=local",
+    "audit:ui-core:ci": "npx tsx checks/ui-core/audit.mjs --audit-profile=ci",
+    "verify": "npx tsx scripts/verify-audit-run.ts",
+    "classify": "npx tsx scripts/classify-audit.ts",
+    "notify": "npx tsx scripts/notify-audit.ts",
+    "test": "npx tsx --test tests/*.test.ts",
+    "test:classify": "npx tsx --test tests/classify-audit.test.ts",
+    "test:verifier": "bash scripts/run-audit-verifier-local.sh"
+  },
+  "keywords": [
+    "documentation",
+    "audit",
+    "coverage",
+    "validation",
+    "ui-components"
+  ],
+  "author": "Tether",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "js-yaml": "^4.1.1"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "24.3.3",
+    "glob": "^11.0.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.2"
+  }
+}

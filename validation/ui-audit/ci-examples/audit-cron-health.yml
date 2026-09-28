@@ -1,0 +1,83 @@
+# Layer E: detect silent cron failure (no successful Audit drift within 48h).
+
+name: Audit cron health
+
+on:
+  schedule:
+    # Daily 09:00 UTC — frequent enough to catch a missed 02:00 nightly within ~48h
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  stale-check:
+    name: Stale nightly audit check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify recent successful Audit drift run
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const workflow_id = "audit-drift.yml";
+            const staleMs = 48 * 60 * 60 * 1000;
+            const title = "Audit drift: no successful workflow run in 48h";
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id,
+              status: "success",
+              per_page: 1,
+            });
+
+            const runs = data.workflow_runs;
+            let stale = true;
+            let detail = "";
+
+            if (runs.length === 0) {
+              detail = "No successful runs found for `audit-drift.yml` (workflow may never have passed or repo is new).";
+            } else {
+              const last = new Date(runs[0].updated_at);
+              const ageMs = Date.now() - last.getTime();
+              detail = `Last success: ${runs[0].updated_at} — ${runs[0].html_url}`;
+              if (ageMs <= staleMs) {
+                core.info(`audit-cron-health: OK (${detail})`);
+                return;
+              }
+              detail += `\n\nAge: ${Math.round(ageMs / 3600000)}h (limit 48h).`;
+            }
+
+            core.warning(`audit-cron-health: STALE — ${detail}`);
+
+            const q = `repo:${owner}/${repo} is:issue is:open in:title "${title.replace(/"/g, '\\"')}"`;
+            const search = await github.rest.search.issuesAndPullRequests({ q, per_page: 3 });
+            if (search.data.items.some((i) => i.title === title)) {
+              core.info("audit-cron-health: open issue already exists; not creating another.");
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner,
+              repo,
+              title,
+              body: [
+                "The scheduled **Audit drift** workflow (`audit-drift.yml`) has no successful completion in the last **48 hours**.",
+                "",
+                "Label suggestion for triage: `audit-cron-health` (create in repo settings if useful).",
+                "",
+                detail,
+                "",
+                "### What to check",
+                "- [ ] Workflow disabled or restricted in repo **Actions** settings",
+                "- [ ] Recent failures on **Audit drift** runs (clone, audit script, permissions)",
+                "- [ ] Org policy / billing blocking scheduled workflows",
+                "",
+                "_Opened by `audit-cron-health.yml`._",
+              ].join("\n"),
+            });
